@@ -19,5 +19,5 @@ et le fd3 parce que ya que le hook de write de fait
 
 
 bien quitter avec d puis q
-pareil parce que c'est pas encore clean et ca fait plenter la machine sinon :D
+pareil parce que c'est pas encore clean et ca fait planter la machine sinon :D
 
