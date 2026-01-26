@@ -5,7 +5,8 @@
 #include <linux/fdtable.h>
 #include <linux/sched.h>
 #include <linux/sched/task.h>
-
+#include <linux/uaccess.h>
+#include <linux/slab.h>
 
 struct task_struct *targeted_task = NULL;
 struct file *targeted_file = NULL;
@@ -192,3 +193,4 @@ int get_info_file(unsigned long arg){
     );
     return 0;
 }
+

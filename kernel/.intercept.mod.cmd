@@ -1,0 +1,1 @@
+savedcmd_/home/debian/IPC/Mini_Kit/kernel/intercept.mod := printf '%s\n'   main.o hooks.o stream.o infos.o ioctl.o my_kallsyms.o | awk '!x[$$0]++ { print("/home/debian/IPC/Mini_Kit/kernel/"$$0) }' > /home/debian/IPC/Mini_Kit/kernel/intercept.mod
