@@ -1,1 +1,0 @@
-savedcmd_/home/debian/IPC/Mini_Kit/kernel/Module.symvers :=  scripts/mod/modpost -M -m       -o /home/debian/IPC/Mini_Kit/kernel/Module.symvers -n -T /home/debian/IPC/Mini_Kit/kernel/modules.order -i Module.symvers -e 
