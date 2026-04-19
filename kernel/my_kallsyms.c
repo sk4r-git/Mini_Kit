@@ -115,10 +115,22 @@ unsigned long find_rodata(unsigned long text)
 }
 
 unsigned long get_addresse_of_symbol_from_string(const char * name){
-    unsigned long maybe_text_base = find_text_base();
-    printk(KERN_INFO "maybe we find kernel .text at %lx\n", maybe_text_base);
-    unsigned long maybe_rodata = find_rodata(maybe_text_base);
-    printk(KERN_INFO "maybe we find kernel .rodata at %lx\n", maybe_rodata);
-    printk(KERN_INFO "maybe we find first rodatastr at %s\n", maybe_rodata);
-    return maybe_text_base;
+    // unsigned long maybe_text_base = find_text_base();
+    // printk(KERN_INFO "maybe we find kernel .text at %lx\n", maybe_text_base);
+    // unsigned long maybe_rodata = find_rodata(maybe_text_base);
+    // printk(KERN_INFO "maybe we find kernel .rodata at %lx\n", maybe_rodata);
+    // printk(KERN_INFO "maybe we find first rodatastr at %s\n", maybe_rodata);
+    // get the adresse of the check function
+    static struct kprobe kp_t = {
+        .symbol_name = "within_kprobe_blacklist",
+    };
+    register_kprobe(&kp_t);
+    unsigned long * within_kprobe_bl = (unsigned long *) kp_t.addr;
+    within_kprobe_bl -= 4;
+    unregister_kprobe(&kp_t);
+    printk(KERN_INFO "vfs read kprobe is at %lx\n", within_kprobe_bl);
+    // printk(KERN_INFO "vfs read kprobe is at %lx, %lx\n", *within_kprobe_bl, *(within_kprobe_bl + 8));
+    
+    //
+    return 0;
 }
