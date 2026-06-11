@@ -1,5 +1,6 @@
 #pragma once
 #include <linux/fs.h>
 
-int hook_file(struct file *file);
-void unhook_file(void);
+
+int global_hook(void);
+void global_unhook(void);

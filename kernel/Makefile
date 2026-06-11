@@ -1,5 +1,5 @@
 obj-m += intercept.o
-intercept-objs := main.o hooks.o stream.o infos.o ioctl.o my_kallsyms.o
+intercept-objs := main.o hooks.o stream.o ioctl.o
 
 ccflags-y += -I$(PWD)/../include
 

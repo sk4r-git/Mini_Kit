@@ -60,77 +60,21 @@ int main() {
     char cmd;
     while (1) {
         printf("Choisir une option : \n" \
-            "a : lister les processus existants \n" \
-            "b : lister les fichiers ouverts par un porcessus \n" \
-            "c : hook un fichier pour en lire son contenu à la volée \n" \
-            "d : arreter le hook du fichier \n" \
-            "q : pour quitter \n" \
+            "A : tout hook et tout loguer, pour l'instant dans le K\n" \
+            "q : quit\n" \
             ">");
         scanf(" %c", &cmd);
 
-        if (cmd == 'q') break;
-
         switch(cmd) {
-            case 'a': 
-                size_t sizea;
-                int aa = ioctl(fd, IOCTL_AS, &sizea); 
-                if (aa < 0){
-                    printf("Error recup size\n");
-                    break;
-                }
-                printf("size total = %ld\n", sizea);
-                char * bufa = malloc(sizea*2);
-                aa = ioctl(fd, IOCTL_A, bufa);
-                if (aa == 0){
-                    printf("Error recup data\n");
-                }
-                printf("whole buf : \n%s\n", bufa);
-                free(bufa);
+            case 'A':
+                ioctl(fd, IOCTL_LOG);
                 break;
-            case 'b': 
-                char pid[8];
-                printf("Entrez le PID du processus que vous souhaitez évaluer ?\n");
-                read(0, &pid, 7);
-                targeted_pid = atoi(pid);
-
-                /* on set le processus target*/
-                ioctl(fd, IOCTL_BT, targeted_pid);
-
-                /* on recup la taille du buffer des fichiers*/
-                size_t sizeb;
-                int ab = ioctl(fd, IOCTL_BS, &sizeb); 
-                if (ab < 0){
-                    printf("Error recup size\n");
-                    break;
-                }
-                printf("size total = %ld\n", sizeb);
-                char * bufb = malloc(sizeb*2);
-                ab = ioctl(fd, IOCTL_B, bufb);
-                if (ab == 0){
-                    printf("Error recup data\n");
-                }
-                printf("whole buf : \n%s\n", bufb);
-                free(bufb);
-                break;
-            case 'c': 
-                char fdt[8];
-                printf("Entrez le FD du fichier que vous souhaitez évaluer ?\n");
-                read(0, &fdt, 7);
-                targeted_fd = atoi(fdt);
-
-                /* on set le fichier target*/
-                ioctl(fd, IOCTL_CT, targeted_fd);
-                ioctl(fd, IOCTL_CI, targeted_fd);
-                start_listener();
-                ioctl(fd, IOCTL_C, targeted_fd);
- 
-                break;
-            case 'd': 
-                ioctl(fd, IOCTL_D, targeted_fd);
-                stop_listener();
+            
+            case 'q':
                 break;
 
-            default: ioctl(fd, -1, &shared_buf); break;
+            default: 
+                break;
         }
         printf("%s\n", shared_buf);
     }
