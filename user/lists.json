@@ -1,0 +1,10 @@
+{
+    "black": {
+        "proc": ["/usr/bin/dmesg"],
+        "file": ["/dev/kmsg"]
+    },
+    "white": {
+        "proc": [],
+        "file": []
+    }
+}

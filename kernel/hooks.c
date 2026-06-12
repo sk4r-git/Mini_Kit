@@ -1,5 +1,6 @@
 #include "hooks.h"
 #include "stream.h"
+#include "list_manager.h"
 
 #include "../include/intercept.h"
 
@@ -24,8 +25,6 @@ static bool kp_glob_write_active = false;
 static struct kretprobe krp_glob_read;
 static bool krp_glob_read_active = false;
 
-static bool blacklist_0_whitelist_1 = false; 
-
 #define MAX_DUMP 256
 static DEFINE_PER_CPU(int, in_hook);
 
@@ -47,6 +46,9 @@ static int handler_pre_glob_write(struct kprobe *p, struct pt_regs *regs)
     if (!file || !file->f_inode || !ubuf || count == 0)
         return 0;
 
+    if (!should_hook(file->f_inode, current))
+        return 0;
+
     n = min_t(size_t, count, MAX_DUMP);
 
     if (copy_from_user_nofault(kbuf, ubuf, n))
@@ -57,8 +59,8 @@ static int handler_pre_glob_write(struct kprobe *p, struct pt_regs *regs)
            current->pid, current->comm,
            file->f_inode->i_ino, count);
 
-    print_hex_dump(KERN_INFO, "[DATA] ", DUMP_PREFIX_OFFSET,
-                   16, 1, kbuf, n, true);
+    // print_hex_dump(KERN_INFO, "[DATA] ", DUMP_PREFIX_OFFSET,
+    //                16, 1, kbuf, n, true);
 
 out:
 
@@ -101,6 +103,8 @@ static int handler_ret_glob_read(struct kretprobe_instance *ri,
     if (ret <= 0)
         return 0;
 
+    if (!should_hook(ctx->file->f_inode, current))
+        return 0;
 
     guard = this_cpu_ptr(&in_hook);
     if (*guard)
@@ -117,8 +121,8 @@ static int handler_ret_glob_read(struct kretprobe_instance *ri,
     printk(KERN_INFO "[KRETPROBE] PID=%d (%s) read inode=%lu bytes=%ld\n",
            current->pid, current->comm,
            ctx->file->f_inode->i_ino, ret);
-    print_hex_dump(KERN_INFO, "[DATA] ", DUMP_PREFIX_OFFSET,
-                   16, 1, kbuf, n, true);
+    // print_hex_dump(KERN_INFO, "[DATA] ", DUMP_PREFIX_OFFSET,
+    //                16, 1, kbuf, n, true);
 
 out:
     (*guard)--;

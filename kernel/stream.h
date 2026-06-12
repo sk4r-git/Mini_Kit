@@ -1,6 +1,7 @@
 #pragma once
 #include <linux/wait.h>
 #include <linux/mutex.h>
+#include <linux/sched.h>
 
 extern char stream_buf[];
 extern size_t stream_len;
